@@ -1,3 +1,38 @@
+# Для запуска достаточно:
+
+## В Git Bash или WSL
+```bash
+./deploy.sh
+```
+## После завершения, в отдельных окнах терминала:
+
+## Порт-форвардинг Jaeger UI
+```bash
+kubectl port-forward svc/jaeger 16686:16686 -n observability
+```
+## Порт-форвардинг Service A
+```bash
+kubectl port-forward svc/service-a 8080:8080 -n observability
+```
+## Тестирование
+```bash
+curl "http://localhost:8080/calculate?value=5&op=square"
+```
+## Результат:
+
+### Поды: 
+
+![pods.png](pods.png)
+
+### Jaeger (http://localhost:16686):
+
+![tracing.png](tracing.png)
+
+### Проект так же готов к запуску в docker
+
+[docker-compose.yml](docker-compose.yml)
+-------------------------------------------------
+
 # Jaeger в Minikube с сервисами
 
 ## Описание

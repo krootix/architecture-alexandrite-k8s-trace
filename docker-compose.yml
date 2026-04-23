@@ -1,0 +1,60 @@
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.91.0
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - tracing-network
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"
+    networks:
+      - tracing-network
+    restart: unless-stopped
+
+  service-b:
+    build: ./services/service-b
+    container_name: service-b
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+    ports:
+      - "8081:8080"
+    networks:
+      - tracing-network
+    depends_on:
+      - otel-collector
+      - jaeger
+    restart: unless-stopped
+
+  service-a:
+    build: ./services/service-a
+    container_name: service-a
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - SERVICE_B_URL=http://service-b:8080
+    ports:
+      - "8080:8080"
+    networks:
+      - tracing-network
+    depends_on:
+      - service-b
+      - otel-collector
+      - jaeger
+    restart: unless-stopped
+
+networks:
+  tracing-network:
+    driver: bridge
